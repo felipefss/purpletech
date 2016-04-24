@@ -1,0 +1,22 @@
+{
+  "name": "purpletech",
+  "version": "1.0.0",
+  "description": "Test Project for recruitment at Purple Technology.",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/felipefss/purpletech.git"
+  },
+  "author": "Felipe Santos",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/felipefss/purpletech/issues"
+  },
+  "homepage": "https://github.com/felipefss/purpletech#readme",
+  "dependencies": {
+    "handlebars": "^4.0.5",
+    "hapi": "^13.3.0",
+    "joi": "^8.0.5",
+    "vision": "^4.1.0"
+  }
+}

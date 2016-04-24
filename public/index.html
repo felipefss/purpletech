@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Currency Convert App</title>
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css"
+          integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+</head>
+<body>
+
+<h1>Currency Convert App</h1>
+<div class="panel panel-default col-md-5 text-center">
+    <div class="input-group">
+        <span class="input-group-addon">$</span>
+        <input id="inputAmount" type="text" class="form-control" aria-label="Amount (in USD)">
+        <span class="input-group-addon"><select id="dropdown_orig"></select></span>
+    </div>
+
+    <span><i style="text-align: center" class="glyphicon glyphicon-arrow-down"></i></span>
+
+    <div>
+        <div class="input-group">
+            <span class="input-group-addon">$</span>
+            <span id="totalConv" class="input-group-addon"></span>
+            <span class="input-group-addon"><select id="dropdown_dest"></select></span>
+            <button id="submitInfo" type="button" class="btn btn-primary btn-lg">Convert</button>
+        </div>
+    </div>
+</div>
+
+<div class="col-md-1"></div>
+
+<div class="well col-md-4">
+<table class="table">
+    <tr>
+        <th>Most Popular Dest. Currency</th>
+        <th>Total Amount Converted (USD)</th>
+        <th>Number of Conversions</th>
+    </tr>
+    <tr>
+        <td id="mostPop">{{mostPop}}</td>
+        <td id="totalAmount">${{totalAmount}}</td>
+        <td id="totalConversions">{{totalConversions}}</td>
+    </tr>
+</table>
+</div>
+
+<script type="text/javascript">
+    function refreshRates(data) {
+        let rates = data.rates;
+        let list = Object.keys(rates);
+        let html = `<option value="${data.base}">${data.base}</option>`;
+
+        $('#dropdown_dest').empty();
+        $('#dropdown_orig').empty().append(html);
+
+        for (let i = 0; i < list.length; i++) {
+            let html = `<option value="${list[i]}">${list[i]}</option>`;
+            $('#dropdown_dest').append(html);
+            $('#dropdown_orig').append(html);
+        }
+
+        return rates;
+    }
+
+    $(document).ready(function() {
+        $('#totalConv').css('width', '60%');
+
+        var rates = {},
+            ratesUSD = {};
+
+        $.getJSON('http://api.fixer.io/latest?base=USD', function(result) {
+            rates = refreshRates(result);
+            ratesUSD = result.rates;
+        });
+
+        var changeInput = function() {
+            let amount = parseFloat($('#inputAmount').val());
+            if (isNaN(amount)) {
+                amount = 0;
+            }
+            let selectedRate = rates[$('#dropdown_dest').val()];
+            let res = amount * selectedRate;
+
+            $('#totalConv').text(res.toFixed(2));
+        };
+
+        $('#inputAmount').on('keyup', function() {
+            changeInput();
+        });
+
+        $('#dropdown_dest').on('change', function() {
+            changeInput();
+        });
+
+        $('#dropdown_orig').on('change', function() {
+            $.getJSON(`http://api.fixer.io/latest?base=${$(this).val()}`, function(result) {
+                rates = refreshRates(result);
+                changeInput();
+            });
+        });
+
+        function convertToUSD(amount, orig) {
+            let rate = ratesUSD[orig];
+
+            return (amount/rate);
+        }
+
+        $('#submitInfo').on('click', function() {
+            let amount = parseFloat($('#totalConv').text());
+            let destCur = $('#dropdown_dest').val();
+            let origCur = $('#dropdown_orig').val();
+
+            if (origCur === 'USD') {
+                amount = parseFloat($('#inputAmount').val());
+            }
+
+            if (!isNaN(amount)) {
+                if (destCur !== 'USD' && origCur !== 'USD') {
+                    amount = convertToUSD(amount, destCur);
+                }
+
+                $.post(`/convert/${amount}/${destCur}`, function(data, status) {
+                    console.log(`Conversion status: ${status}`);
+                    $('#inputAmount').val('');
+                    $('#totalConv').text('');
+
+                    $('#mostPop').text(data.mostPop);
+                    $('#totalAmount').text(`$${data.totalAmount}`);
+                    $('#totalConversions').text(data.totalConversions);
+                });
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
